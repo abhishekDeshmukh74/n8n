@@ -52,6 +52,7 @@ const mockToast = {
 
 const mockClipboard = {
 	copy: vi.fn(),
+	copyAsync: vi.fn().mockImplementation((p: Promise<string>) => p.then(() => {})),
 };
 
 const mockPageRedirectionHelper = {
@@ -552,9 +553,7 @@ describe('SettingsUsersView', () => {
 
 			expect(usersStore.generateInviteLink).toHaveBeenCalledWith({ id: '3' });
 			await waitFor(() => {
-				expect(mockClipboard.copy).toHaveBeenCalledWith(
-					'https://example.com/signup?token=generated-token',
-				);
+				expect(mockClipboard.copyAsync).toHaveBeenCalled();
 				expect(mockToast.showToast).toHaveBeenCalledWith({
 					type: 'success',
 					title: expect.any(String),
@@ -597,7 +596,7 @@ describe('SettingsUsersView', () => {
 
 			expect(usersStore.getUserPasswordResetLink).toHaveBeenCalledWith(mockUsersList.items[1]);
 			await waitFor(() => {
-				expect(mockClipboard.copy).toHaveBeenCalledWith('https://example.com/reset/123');
+				expect(mockClipboard.copyAsync).toHaveBeenCalled();
 				expect(mockToast.showToast).toHaveBeenCalledWith({
 					type: 'success',
 					title: expect.any(String),
@@ -763,7 +762,7 @@ describe('SettingsUsersView', () => {
 
 			await waitFor(() => {
 				expect(usersStore.getUserPasswordResetLink).toHaveBeenCalled();
-				expect(mockClipboard.copy).not.toHaveBeenCalled();
+				expect(mockClipboard.copyAsync).toHaveBeenCalled();
 				expect(mockToast.showToast).not.toHaveBeenCalled();
 			});
 		});

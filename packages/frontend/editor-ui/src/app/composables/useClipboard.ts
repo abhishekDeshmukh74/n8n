@@ -32,6 +32,23 @@ export function useClipboard({
 		await coreCopy(value);
 	}
 
+	// Safari requires navigator.clipboard.write() to be called synchronously
+	// within a user gesture. Passing a Promise to ClipboardItem keeps the write
+	// call in the gesture context while resolving the text asynchronously.
+	async function copyAsync(valuePromise: Promise<string>) {
+		const nav = popOutWindow?.value?.navigator;
+		const targetClipboard = nav?.clipboard ?? navigator.clipboard;
+		if (targetClipboard && typeof ClipboardItem !== 'undefined') {
+			const clipboardItem = new ClipboardItem({
+				'text/plain': valuePromise.then((value) => new Blob([value], { type: 'text/plain' })),
+			});
+			await targetClipboard.write([clipboardItem]);
+			return;
+		}
+		// Fallback for environments without ClipboardItem support
+		await copy(await valuePromise);
+	}
+
 	const ignoreClasses = ['el-messsage-box', 'ignore-key-press-canvas'];
 	const initialized = ref(false);
 
@@ -91,6 +108,7 @@ export function useClipboard({
 
 	return {
 		copy,
+		copyAsync,
 		copied,
 		isSupported,
 		text,

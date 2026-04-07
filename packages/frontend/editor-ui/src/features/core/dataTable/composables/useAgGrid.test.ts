@@ -310,6 +310,7 @@ describe('useAgGrid', () => {
 			const mockCopy = vi.fn();
 			vi.mocked(useClipboard).mockReturnValue({
 				copy: mockCopy,
+				copyAsync: vi.fn(),
 				onPaste: ref(null),
 				copied: computed(() => false),
 				isSupported: ref(true),
@@ -348,6 +349,7 @@ describe('useAgGrid', () => {
 			const mockCopy = vi.fn();
 			vi.mocked(useClipboard).mockReturnValue({
 				copy: mockCopy,
+				copyAsync: vi.fn(),
 				onPaste: ref(null),
 				copied: computed(() => false),
 				isSupported: ref(true),
@@ -386,6 +388,7 @@ describe('useAgGrid', () => {
 			const mockCopy = vi.fn();
 			vi.mocked(useClipboard).mockReturnValue({
 				copy: mockCopy,
+				copyAsync: vi.fn(),
 				onPaste: ref(null),
 				copied: computed(() => false),
 				isSupported: ref(true),

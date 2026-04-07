@@ -241,8 +241,12 @@ async function onGenerateInviteLink(userId: string) {
 	try {
 		const user = usersStore.usersList.state.items.find((u) => u.id === userId);
 		if (user) {
-			const url = await usersStore.generateInviteLink({ id: userId });
-			void clipboard.copy(url.link);
+			// Use copyAsync so the clipboard.write() call stays in the synchronous
+			// user gesture context. Safari blocks clipboard writes that happen after
+			// an awaited async call (e.g. a fetch).
+			await clipboard.copyAsync(
+				usersStore.generateInviteLink({ id: userId }).then((url) => url.link),
+			);
 
 			showToast({
 				type: 'success',
@@ -258,8 +262,10 @@ async function onCopyPasswordResetLink(userId: string) {
 	try {
 		const user = usersStore.usersList.state.items.find((u) => u.id === userId);
 		if (user) {
-			const url = await usersStore.getUserPasswordResetLink(user);
-			void clipboard.copy(url.link);
+			// Use copyAsync so the clipboard.write() call stays in the synchronous
+			// user gesture context. Safari blocks clipboard writes that happen after
+			// an awaited async call (e.g. a fetch).
+			await clipboard.copyAsync(usersStore.getUserPasswordResetLink(user).then((url) => url.link));
 
 			showToast({
 				type: 'success',
