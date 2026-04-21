@@ -1410,6 +1410,84 @@ describe('FilterParameter', () => {
 				});
 			});
 
+			describe('unknown operator does not fall through between type cases', () => {
+				it('returns false for unknown number operation matching the reporter scenario (NODE-4872)', () => {
+					// The reporter's workflow contained `operation: 'equal'` (legacy name;
+					// the valid name is 'equals'). Without the break after the `number`
+					// case, execution fell through into `dateTime`, `boolean`, `array`,
+					// `object` before reaching the final warn + return false.
+					const run = () =>
+						executeFilter(
+							filterFactory({
+								conditions: [
+									{
+										id: '1',
+										leftValue: 200,
+										rightValue: 200,
+										operator: { operation: 'equal' as never, type: 'number' },
+									},
+								],
+							}),
+						);
+					expect(run).not.toThrow();
+					expect(run()).toBe(false);
+				});
+
+				it('does not call DateTime methods on a number when operation collides with a DateTime op', () => {
+					// `before` is a valid DateTime operation but not a number operation.
+					// Without the break, falls through to the `dateTime` case and calls
+					// `.toMillis()` on a plain number, throwing TypeError.
+					const run = () =>
+						executeFilter(
+							filterFactory({
+								conditions: [
+									{
+										id: '1',
+										leftValue: 100,
+										rightValue: 50,
+										operator: { operation: 'before' as never, type: 'number' },
+									},
+								],
+							}),
+						);
+					expect(run).not.toThrow();
+					expect(run()).toBe(false);
+				});
+
+				it.each([
+					{
+						type: 'dateTime' as const,
+						leftValue: DateTime.fromISO('2025-01-01'),
+						rightValue: DateTime.fromISO('2025-01-01'),
+					},
+					{ type: 'boolean' as const, leftValue: true, rightValue: false },
+					{ type: 'array' as const, leftValue: [1, 2, 3], rightValue: 1 },
+					{ type: 'object' as const, leftValue: { a: 1 }, rightValue: null },
+				])(
+					'returns false for unknown operation on type=$type',
+					({ type, leftValue, rightValue }) => {
+						const run = () =>
+							executeFilter(
+								filterFactory({
+									conditions: [
+										{
+											id: '1',
+											leftValue: leftValue as never,
+											rightValue: rightValue as never,
+											// `rightType: 'any'` skips right-side coercion, which is not
+											// relevant to the fall-through invariant being tested here.
+											operator: { operation: 'bogus' as never, type, rightType: 'any' },
+										},
+									],
+									options: { typeValidation: 'loose' },
+								}),
+							);
+						expect(run).not.toThrow();
+						expect(run()).toBe(false);
+					},
+				);
+			});
+
 			describe('arrayContainsValue', () => {
 				test('should return true if the array contains the value', () => {
 					expect(arrayContainsValue([1, 2, 3], 2, false)).toBe(true);
